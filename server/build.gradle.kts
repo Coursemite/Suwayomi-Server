@@ -3,105 +3,61 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import java.time.Instant
 
 plugins {
-    id(
-        libs.plugins.kotlin.jvm
-            .get()
-            .pluginId,
-    )
-    id(
-        libs.plugins.kotlin.serialization
-            .get()
-            .pluginId,
-    )
-    id(
-        libs.plugins.ktlint
-            .get()
-            .pluginId,
-    )
+    kotlin("jvm") version "1.9.23"
+    kotlin("plugin.serialization") version "1.9.23"
+    id("org.jlleitschuh.gradle.ktlint") version "11.6.0"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.github.gmazzo.buildconfig") version "4.1.2"
+    id("gg.jte.gradle") version "2.4.1"
     application
-    alias(libs.plugins.shadowjar)
-    id(
-        libs.plugins.buildconfig
-            .get()
-            .pluginId,
-    )
-    id(
-        libs.plugins.jte
-            .get()
-            .pluginId,
-    )
 }
 
 dependencies {
-    // Shared
+    // Keep using the libs.* for dependencies if libs.versions.toml is still available
     implementation(libs.bundles.shared)
     testImplementation(libs.bundles.sharedTest)
 
-    // OkHttp
     implementation(libs.bundles.okhttp)
     implementation(libs.okio)
 
-    // Javalin api
     implementation(libs.bundles.javalin)
     implementation(libs.bundles.jackson)
 
-    // GraphQL
     implementation(libs.graphql.kotlin.server)
     implementation(libs.graphql.kotlin.scheme)
     implementation(libs.graphql.java.scalars)
 
-    // Exposed ORM
     implementation(libs.bundles.exposed)
     implementation(libs.h2)
-
-    // Exposed Migrations
     implementation(libs.exposed.migrations)
 
-    // tray icon
     implementation(libs.bundles.systemtray)
 
-    // dependencies of Mihon (Tachiyomi) extensions, some are duplicate, keeping it here for reference
     implementation(libs.injekt)
     implementation(libs.okhttp.core)
     implementation(libs.rxjava)
     implementation(libs.jsoup)
 
-    // ComicInfo
     implementation(libs.serialization.xml.core)
     implementation(libs.serialization.xml)
 
-    // Sort
     implementation(libs.sort)
-
-    // asm for ByteCodeEditor(fixing SimpleDateFormat) (must match Dex2Jar version)
     implementation(libs.asm)
-
-    // Disk & File
     implementation(libs.cache4k)
     implementation(libs.zip4j)
     implementation(libs.commonscompress)
     implementation(libs.junrar)
-
-    // AES/CBC/PKCS7Padding Cypher provider for zh.copymanga
     implementation(libs.bouncycastle)
 
-    // AndroidCompat
     implementation(projects.androidCompat)
     implementation(projects.androidCompat.config)
 
-    // i18n
     implementation(projects.server.i18n)
 
-    // uncomment to test extensions directly
-//    implementation(fileTree("lib/"))
     implementation(kotlin("script-runtime"))
-
     testImplementation(libs.mockk)
-
     implementation(libs.cron4j)
-
     implementation(libs.cronUtils)
-
     compileOnly(libs.kte)
 }
 
@@ -110,10 +66,9 @@ jte {
 }
 
 application {
-    applicationDefaultJvmArgs =
-        listOf(
-            "-Djunrar.extractor.thread-keep-alive-seconds=30",
-        )
+    applicationDefaultJvmArgs = listOf(
+        "-Djunrar.extractor.thread-keep-alive-seconds=30"
+    )
     mainClass.set(MainClass)
 }
 
@@ -128,7 +83,6 @@ sourceSets {
 buildConfig {
     className("BuildConfig")
     packageName("suwayomi.tachidesk.server.generated")
-
     useKotlinOutput()
 
     fun quoteWrap(obj: Any): String = """"$obj""""
@@ -138,9 +92,7 @@ buildConfig {
     buildConfigField("String", "REVISION", quoteWrap(getTachideskRevision()))
     buildConfigField("String", "BUILD_TYPE", quoteWrap(if (System.getenv("ProductBuildType") == "Stable") "Stable" else "Preview"))
     buildConfigField("long", "BUILD_TIME", Instant.now().epochSecond.toString())
-
     buildConfigField("String", "WEBUI_TAG", quoteWrap(webUIRevisionTag))
-
     buildConfigField("String", "GITHUB", quoteWrap("https://github.com/Suwayomi/Suwayomi-Server"))
     buildConfigField("String", "DISCORD", quoteWrap("https://discord.gg/DDZdqZWaHA"))
 }
@@ -175,7 +127,7 @@ tasks {
     withType<KotlinJvmCompile> {
         compilerOptions {
             freeCompilerArgs.add(
-                "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
+                "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
             )
         }
     }
@@ -195,16 +147,13 @@ tasks {
 
             var shouldOverwrite = true
             if (zipFile.isValidZipFile) {
-                val zipRevision =
-                    zipFile.getInputStream(zipFile.getFileHeader("revision")).bufferedReader().use {
-                        it.readText().trim()
-                    }
-
+                val zipRevision = zipFile.getInputStream(zipFile.getFileHeader("revision")).bufferedReader().use {
+                    it.readText().trim()
+                }
                 if (zipRevision == webUIRevisionTag) {
                     shouldOverwrite = false
                 }
             }
-
             return shouldOverwrite
         }
 
@@ -215,12 +164,10 @@ tasks {
         group = "application"
         finalizedBy(run)
         doFirst {
-            application.applicationDefaultJvmArgs =
-                listOf(
-                    "-Dsuwayomi.tachidesk.config.server.webUIInterface=electron",
-                    // Change this to the installed electron application
-                    "-Dsuwayomi.tachidesk.config.server.electronPath=/usr/bin/electron",
-                )
+            application.applicationDefaultJvmArgs = listOf(
+                "-Dsuwayomi.tachidesk.config.server.webUIInterface=electron",
+                "-Dsuwayomi.tachidesk.config.server.electronPath=/usr/bin/electron",
+            )
         }
     }
 
@@ -228,3 +175,4 @@ tasks {
         mustRunAfter(generateJte)
     }
 }
+
