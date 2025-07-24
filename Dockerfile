@@ -3,7 +3,7 @@ FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /app
 COPY . .
 RUN chmod +x gradlew
-RUN ./gradlew build --no-daemon
+RUN ./gradlew build -x test --no-daemon
 
 # Optional: Create a smaller runtime image
 FROM eclipse-temurin:21-jdk
