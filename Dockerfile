@@ -3,21 +3,23 @@ FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
-# Copy the Gradle wrapper and build scripts first to leverage Docker cache
+# Copy Gradle wrapper and related files
 COPY gradlew .
+COPY gradle gradle
+
+# Copy build scripts
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
-COPY settings.gradle .
-# Optional: if you have other config files like `build.gradle.kts`, include them too
+# COPY settings.gradle .  <-- REMOVE THIS LINE
+
+# Copy the rest of the project
+COPY . .
 
 # Make Gradle wrapper executable
 RUN chmod +x gradlew
 
-# Run a dummy build to download dependencies
+# Optional: force Gradle to resolve dependencies early
 RUN ./gradlew dependencies || true
-
-# Now copy the rest of the source files
-COPY . .
 
 # Build the project without running tests
 RUN ./gradlew build -x test --no-daemon --stacktrace
