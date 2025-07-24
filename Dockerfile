@@ -22,7 +22,8 @@ RUN chmod +x gradlew
 RUN ./gradlew dependencies || true
 
 # Build the project without running tests
-RUN ./gradlew build -x test --no-daemon --stacktrace
+RUN ./gradlew build -x test --no-daemon --stacktrace || tail -n 100 build.gradle.kts && exit 1
+
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:21-jdk
