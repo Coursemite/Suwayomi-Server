@@ -73,35 +73,38 @@ object JavalinSetup {
                 }
 
                 var connectorAdded = false
-                config.jetty.modifyServer { server ->
-                    if (!connectorAdded) {
-                        val connector =
-                            ServerConnector(server).apply {
-                                host = serverConfig.ip.value
-                                port = serverConfig.port.value
-                            }
-                        server.addConnector(connector)
+               config.jetty.modifyServer { server ->
+    if (!connectorAdded) {
+        val envPort = System.getenv("PORT")?.toIntOrNull() ?: serverConfig.port.value
+        val envHost = System.getenv("HOST") ?: serverConfig.ip.value
 
-                        serverConfig.subscribeTo(
-                            combine(
-                                serverConfig.ip,
-                                serverConfig.port,
-                            ) { ip, port -> Pair(ip, port) },
-                            { (newIp, newPort) ->
-                                val oldIp = connector.host
-                                val oldPort = connector.port
+        val connector =
+            ServerConnector(server).apply {
+                host = envHost
+                port = envPort
+            }
+        server.addConnector(connector)
 
-                                connector.host = newIp
-                                connector.port = newPort
-                                connector.stop()
-                                connector.start()
+        serverConfig.subscribeTo(
+            combine(
+                serverConfig.ip,
+                serverConfig.port,
+            ) { ip, port -> Pair(ip, port) },
+            { (newIp, newPort) ->
+                val oldIp = connector.host
+                val oldPort = connector.port
 
-                                logger.info { "Server ip and/or port changed from $oldIp:$oldPort to $newIp:$newPort " }
-                            },
-                        )
-                        connectorAdded = true
-                    }
-                }
+                connector.host = newIp
+                connector.port = newPort
+                connector.stop()
+                connector.start()
+
+                logger.info { "Server ip and/or port changed from $oldIp:$oldPort to $newIp:$newPort " }
+            },
+        )
+        connectorAdded = true
+    }
+}
 
                 config.bundledPlugins.enableCors { cors ->
                     cors.addRule {
