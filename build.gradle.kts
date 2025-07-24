@@ -6,7 +6,7 @@ import org.jlleitschuh.gradle.ktlint.KtlintPlugin
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
-    alias(libs.plugins.ktlint) apply false
+    alias(libs.plugins.ktlint) apply false // version managed via libs.versions.toml
     alias(libs.plugins.buildconfig) apply false
     alias(libs.plugins.download)
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -16,7 +16,6 @@ plugins {
 
 allprojects {
     group = "suwayomi"
-
     version = "1.0"
 
     repositories {
@@ -29,14 +28,7 @@ allprojects {
 }
 
 subprojects {
-    plugins.withType<JavaPlugin> {
-        extensions.configure<JavaPluginExtension> {
-            sourceCompatibility = JavaVersion.VERSION_21
-            targetCompatibility = JavaVersion.VERSION_21
-        }
-    }
-
-    plugins.withType<KtlintPlugin> {
+    plugins.withId("org.jlleitschuh.gradle.ktlint") {
         extensions.configure<KtlintExtension>("ktlint") {
             version.set(libs.versions.ktlint.get())
             filter {
@@ -45,15 +37,20 @@ subprojects {
         }
     }
 
-    tasks {
-        withType<KotlinJvmCompile> {
-            if (plugins.hasPlugin(KtlintPlugin::class)) {
-                dependsOn("ktlintFormat")
-            }
-            compilerOptions {
-                jvmTarget = JvmTarget.JVM_21
-                freeCompilerArgs.add("-Xcontext-receivers")
-            }
+    plugins.withType<JavaPlugin> {
+        extensions.configure<JavaPluginExtension> {
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+        }
+    }
+
+    tasks.withType<KotlinJvmCompile>().configureEach {
+        if (plugins.hasPlugin(KtlintPlugin::class)) {
+            dependsOn("ktlintFormat")
+        }
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_21
+            freeCompilerArgs.add("-Xcontext-receivers")
         }
     }
 }
