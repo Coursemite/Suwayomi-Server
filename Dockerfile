@@ -1,21 +1,26 @@
+# ---- Build stage ----
 FROM eclipse-temurin:21-jdk AS builder
 
-# Set working directory to the server folder
 WORKDIR /app
-COPY server /app
 
-# Include gradle wrapper files needed to run the build
-COPY gradlew gradlew
-COPY gradle gradle
+# Copy everything
+COPY . .
 
+# Make gradlew executable
 RUN chmod +x gradlew
-RUN ./gradlew build -x test --no-daemon
 
-# Runtime image
+# Build without running tests
+RUN ./gradlew build -x test --no-daemon --stacktrace
+
+# ---- Runtime stage ----
 FROM eclipse-temurin:21-jdk
+
 WORKDIR /app
 
+# Copy built project from builder image
 COPY --from=builder /app /app
 
 EXPOSE 4567
+
+# Start the application
 CMD ["./gradlew", "run", "--no-daemon"]
